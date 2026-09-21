@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>For You 💖</title>
+<style>
+  :root {
+    --pink: #ff6b9d;
+    --pink-dark: #e0457f;
+    --cream: #fff5f8;
+    --ink: #5a2a3f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
+    background: linear-gradient(135deg, #ffd6e7, #ffe9f1 50%, #ffd1dc);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* floating hearts background */
+  .heart-bg {
+    position: fixed;
+    bottom: -40px;
+    pointer-events: none;
+    opacity: .6;
+    animation: floatUp linear forwards;
+    user-select: none;
+  }
+  @keyframes floatUp {
+    to { transform: translateY(-115vh) rotate(25deg); opacity: 0; }
+  }
+
+  .card {
+    position: relative;
+    z-index: 2;
+    background: var(--cream);
+    border-radius: 28px;
+    padding: 40px 32px 36px;
+    width: min(92vw, 460px);
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(224, 69, 127, .25);
+    border: 3px solid #ffc2d8;
+    animation: pop .6s cubic-bezier(.2, 1.4, .4, 1);
+  }
+  @keyframes pop { from { transform: scale(.7); opacity: 0; } }
+
+  .emoji { font-size: 64px; display: inline-block; animation: bounce 1.6s ease-in-out infinite; }
+  @keyframes bounce { 50% { transform: translateY(-10px) scale(1.06); } }
+
+  h1 { font-size: 1.7rem; margin: 14px 0 6px; color: var(--pink-dark); }
+  .sub { font-size: 1rem; opacity: .8; margin-bottom: 26px; }
+
+  .buttons { display: flex; gap: 18px; justify-content: center; align-items: center; min-height: 56px; }
+  button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 14px 34px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  #no {
+    background: var(--pink);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(224, 69, 127, .4);
+  }
+  #no:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(224, 69, 127, .55); }
+  #yes {
+    background: #fff;
+    color: var(--pink-dark);
+    border: 2px solid var(--pink);
+    transition: left .25s cubic-bezier(.2, 1.2, .4, 1), top .25s cubic-bezier(.2, 1.2, .4, 1);
+  }
+  #yes.running { position: fixed; z-index: 10; }
+
+  .hint { margin-top: 22px; font-size: .85rem; opacity: .6; min-height: 1.2em; }
+
+  /* poem view */
+  #poemView { display: none; }
+  #poemView h2 { color: var(--pink-dark); font-size: 1.6rem; margin: 10px 0 18px; }
+  .poem {
+    white-space: pre-line;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    text-align: center;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding: 4px 8px;
+  }
+  .signoff { margin-top: 22px; font-weight: 700; color: var(--pink-dark); }
+  .show-poem #askView { display: none; }
+  .show-poem #poemView { display: block; animation: pop .7s cubic-bezier(.2, 1.4, .4, 1); }
+
+  /* photo backdrop (poem view only) */
+  .photo-bg {
+    position: fixed;
+    inset: -6%;
+    z-index: 0;
+    background: url("photo.jpg") center 40% / cover no-repeat;
+    filter: blur(1.5px) brightness(.75) saturate(1.15);
+    opacity: 0;
+    transition: opacity 1.8s ease;
+    pointer-events: none;
+  }
+  .photo-bg::after {           /* soft rosy tint */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 40%, rgba(255,107,157,.15), rgba(60,10,35,.4));
+  }
+  .show-poem .photo-bg {
+    opacity: 1;
+    animation: kenburns 24s ease-in-out infinite alternate;
+  }
+  @keyframes kenburns {
+    from { transform: scale(1) translate(0, 0); }
+    to   { transform: scale(1.12) translate(-1.5%, -1.5%); }
+  }
+
+  /* glass card + light text over the photo */
+  .show-poem .card {
+    background: rgba(30, 8, 20, .45);
+    border-color: rgba(255, 194, 216, .45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #fff0f5;
+    width: min(92vw, 520px);
+  }
+  .show-poem #poemView h2 { color: #ffb3d1; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
+  .show-poem .signoff { color: #ffb3d1; }
+  .show-poem .poem { text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+  .poem::-webkit-scrollbar { width: 6px; }
+  .poem::-webkit-scrollbar-thumb { background: rgba(255,179,209,.5); border-radius: 3px; }
+
+  /* poem lines fade in one stanza at a time */
+  .stanza { display: block; margin-bottom: 1.2em; opacity: 0; animation: rise 1.2s ease forwards; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  /* sparkles drifting over the photo */
+  .sparkle {
+    position: fixed;
+    z-index: 1;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #ffd6e7;
+    box-shadow: 0 0 10px 3px rgba(255, 182, 213, .8);
+    pointer-events: none;
+    animation: drift linear forwards;
+  }
+  @keyframes drift {
+    0%   { opacity: 0; transform: translateY(0) scale(.6); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-40vh) translateX(30px) scale(1.2); }
+  }
+</style>
+</head>
+<body>
+
+<div class="photo-bg" aria-hidden="true"></div>
+
+<div class="card" id="card">
+  <!-- Question -->
+  <div id="askView">
+    <div class="emoji">🥺</div>
+    <h1>Are you still mad at me?</h1>
+    <p class="sub">Be honest… I made you something. 💌</p>
+    <div class="buttons">
+      <button id="yes" type="button">Yes 😤</button>
+      <button id="no" type="button">No 💖</button>
+    </div>
+    <p class="hint" id="hint"></p>
+  </div>
+
+  <!-- Poem -->
+  <div id="poemView">
+    <div class="emoji">🎂</div>
+    <h2>Happy Birthday, my love!</h2>
+    <div class="poem" id="poemText"></div>
+    <p class="signoff" id="signoff"></p>
+  </div>
+</div>
+
+<script>
+  /* ============ EDIT THESE ============ */
+  const POEM = `Today belongs to you—a day
+to honor all you are and bring,
+the light you move through, come what may,
+the way you make uncertain things
+feel possible, at least for now.
+
+I won't pretend the path is clear,
+or that my heart doesn't carry weight
+of all the longing, all the fear
+I've learned to hold, to regulate,
+to keep from burdening your day.
+
+But this is true: you matter more
+than words I've ever found to say.
+Your kindness, strength—these I adore—
+the way you show up anyway,
+the devotion that you give is real.
+
+If all I have is this—to wait,
+to trust, to hold space for your choice,
+to honor what you navigate—
+then I will find my peace and voice
+in simply knowing that you're here.
+
+So on this day that's just for you,
+I wish you joy without the weight
+of my unsaid, my wish come true—
+just this: a love that learns to wait,
+and celebrates the gift you are.
+
+Happy birthday.`;
+
+  const SIGN_OFF = "With all my love ❤️";   // e.g. "Forever yours, Kali ❤️"
+  /* ==================================== */
+
+  // build the poem stanza by stanza so each one fades in
+  const poemEl = document.getElementById("poemText");
+  POEM.split(/\n\s*\n/).forEach((text, i) => {
+    const s = document.createElement("span");
+    s.className = "stanza";
+    s.textContent = text;
+    s.style.animationDelay = 0.8 + i * 1.4 + "s";
+    poemEl.appendChild(s);
+  });
+  document.getElementById("signoff").textContent = SIGN_OFF;
+
+  const yes = document.getElementById("yes");
+  const no = document.getElementById("no");
+  const hint = document.getElementById("hint");
+  const hints = [
+    "Hmm, the Yes button seems shy…",
+    "Nope, can't catch it 😏",
+    "It really doesn't want to be clicked!",
+    "Just press No, you know you want to 💕",
+    "Yes is on vacation.",
+  ];
+  let dodges = 0;
+
+  function runAway() {
+    const w = yes.offsetWidth, h = yes.offsetHeight, pad = 12;
+    const maxX = window.innerWidth - w - pad;
+    const maxY = window.innerHeight - h - pad;
+    let x, y, tries = 0;
+    const cur = yes.getBoundingClientRect();
+    // pick a spot that's reasonably far from where it currently is
+    do {
+      x = pad + Math.random() * Math.max(maxX - pad, 1);
+      y = pad + Math.random() * Math.max(maxY - pad, 1);
+      tries++;
+    } while (tries < 20 && Math.hypot(x - cur.left, y - cur.top) < 160);
+
+    if (!yes.classList.contains("running")) {
+      // pin at its current spot first so the move animates smoothly
+      yes.style.left = cur.left + "px";
+      yes.style.top = cur.top + "px";
+      yes.classList.add("running");
+      yes.getBoundingClientRect(); // force reflow
+    }
+    yes.style.left = x + "px";
+    yes.style.top = y + "px";
+
+    hint.textContent = hints[dodges++ % hints.length];
+  }
+
+  // Dodge as the cursor approaches, not just when it touches
+  document.addEventListener("pointermove", (e) => {
+    const r = yes.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    if (Math.hypot(e.clientX - cx, e.clientY - cy) < 110) runAway();
+  });
+  ["pointerenter", "pointerdown", "touchstart", "mousedown", "click", "focus"].forEach((ev) =>
+    yes.addEventListener(ev, (e) => { e.preventDefault(); runAway(); yes.blur(); }, { passive: false })
+  );
+  window.addEventListener("resize", () => {
+    if (yes.classList.contains("running")) runAway();
+  });
+
+  // No → reveal the poem
+  no.addEventListener("click", () => {
+    document.body.classList.add("show-poem");
+    yes.style.display = "none";
+    for (let i = 0; i < 40; i++) setTimeout(spawnHeart, i * 60);
+    setInterval(spawnSparkle, 350);
+  });
+
+  function spawnSparkle() {
+    const el = document.createElement("div");
+    el.className = "sparkle";
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.top = 40 + Math.random() * 60 + "vh";
+    const dur = 3 + Math.random() * 3;
+    el.style.animationDuration = dur + "s";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), dur * 1000);
+  }
+
+  // Floating hearts
+  const HEARTS = ["💖", "💕", "💗", "💝", "🌸", "✨"];
+  function spawnHeart() {
+    const el = document.createElement("div");
+    el.className = "heart-bg";
+    el.textContent = HEARTS[Math.floor(Math.random() * HEARTS.length)];
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.fontSize = 16 + Math.random() * 28 + "px";
+    const dur = 6 + Math.random() * 6;
+    el.style.animationDuration = dur + "s";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), dur * 1000);
+  }
+  setInterval(spawnHeart, 700);
+</script>
+</body>
+</html>
