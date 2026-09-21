@@ -102,29 +102,51 @@
   .show-poem #poemView { display: block; animation: pop .7s cubic-bezier(.2, 1.4, .4, 1); }
 
   /* photo backdrop (poem view only) */
-  .photo-bg {
+  .photo-bg {                  /* blurred ambient fill, never crops the real photo */
     position: fixed;
-    inset: -6%;
+    inset: -5%;
     z-index: 0;
-    background: url("photo.jpg") center 40% / cover no-repeat;
-    filter: blur(1.5px) brightness(.75) saturate(1.15);
+    background: url("photo.jpg") center / cover no-repeat;
+    filter: blur(28px) brightness(.55) saturate(1.2);
     opacity: 0;
     transition: opacity 1.8s ease;
     pointer-events: none;
   }
-  .photo-bg::after {           /* soft rosy tint */
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 50% 40%, rgba(255,107,157,.15), rgba(60,10,35,.4));
+  .photo-main {                /* the full, uncropped photo */
+    position: fixed;
+    z-index: 1;
+    object-fit: contain;
+    opacity: 0;
+    transform: scale(.96);
+    transition: opacity 1.8s ease, transform 1.8s ease;
+    filter: drop-shadow(0 10px 30px rgba(0,0,0,.55));
+    pointer-events: none;
+    /* portrait screens: photo on top, poem below */
+    top: 2vh; left: 4vw; width: 92vw; height: 36vh;
   }
-  .show-poem .photo-bg {
-    opacity: 1;
-    animation: kenburns 24s ease-in-out infinite alternate;
-  }
+  .show-poem .photo-bg { opacity: 1; }
+  .show-poem .photo-main { opacity: 1; animation: kenburns 20s ease-in-out 1.8s infinite alternate; }
   @keyframes kenburns {
-    from { transform: scale(1) translate(0, 0); }
-    to   { transform: scale(1.12) translate(-1.5%, -1.5%); }
+    from { transform: scale(1); }
+    to   { transform: scale(1.04) translateY(-.5%); }
+  }
+
+  /* portrait: card sits under the photo */
+  .show-poem { align-items: flex-end; padding-bottom: 2vh; }
+  .show-poem .card { max-height: 58vh; display: flex; flex-direction: column; padding: 22px 20px 20px; }
+  .show-poem .card #poemView { display: flex; flex-direction: column; min-height: 0; }
+  .show-poem .emoji { font-size: 36px; }
+  .show-poem #poemView h2 { margin: 4px 0 10px; font-size: 1.3rem; }
+  .show-poem .poem { max-height: none; flex: 1; min-height: 0; }
+  .show-poem .signoff { margin-top: 12px; }
+
+  /* landscape / desktop: photo left, poem right */
+  @media (min-aspect-ratio: 1/1) {
+    .photo-main { top: 4vh; left: 4vw; width: 44vw; height: 92vh; }
+    .show-poem { align-items: center; justify-content: flex-end; padding: 0 4vw 0 0; }
+    .show-poem .card { max-height: 92vh; width: min(46vw, 560px); padding: 32px 30px 28px; }
+    .show-poem .emoji { font-size: 52px; }
+    .show-poem #poemView h2 { font-size: 1.6rem; margin: 10px 0 16px; }
   }
 
   /* glass card + light text over the photo */
@@ -134,7 +156,6 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     color: #fff0f5;
-    width: min(92vw, 520px);
   }
   .show-poem #poemView h2 { color: #ffb3d1; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
   .show-poem .signoff { color: #ffb3d1; }
@@ -167,6 +188,7 @@
 <body>
 
 <div class="photo-bg" aria-hidden="true"></div>
+<img class="photo-main" src="photo.jpg" alt="Us" aria-hidden="true">
 
 <div class="card" id="card">
   <!-- Question -->
